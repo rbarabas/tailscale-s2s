@@ -2,6 +2,10 @@
 
 TS_STATE=/var/lib/tailscale/tailscaled.state
 
+# Enable IPv4 forwarding
+sysctl net.ipv4.ip_forward=1
+sysctl net.ipv6.conf.all.forwarding=1
+
 # Add the script to the crontab
 if [ ! -f /etc/cron.d/tailscale_routes ]; then
     echo "@reboot root $0" > /etc/cron.d/tailscale_routes
@@ -22,25 +26,18 @@ if [ "${ts_routes_arr}" == "null" ]; then
 fi
 export ts_routes=$(echo "${ts_routes_arr}" | jq '.[]' -r)
 
-# Enable IPv4 forwarding
-if [ -f /proc/sys/net/ipv4/ip_forward ]; then
-    sysctl net.ipv4.ip_forward=1
-    sysctl net.ipv4.conf.all.forwarding=1
-fi
-
-# Enable IPv6 forwarding, if available
-if [ -f /proc/sys/net/ipv6/ip_forward ]; then
-    sysctl net.ipv6.ip_forward=1
-    sysctl net.ipv6.conf.all.forwarding=1
-fi
-
 # Advertised routes are connected, prioritize in the main routing table
 for route in ${ts_routes}; do
     # Skip default routes
     if [[ "${route}" == *"/0"* ]]; then
         continue
     fi
-    echo ip rule add to "${route}" table main priority 20
-    ip rule add to "${route}" table main priority 20
-done
 
+    if [[ "${route}" == *":"* ]]; then
+        echo ip -6 rule add to "${route}" table main priority 20
+        ip -6 rule add to "${route}" table main priority 20
+    else
+        echo ip -4 rule add to "${route}" table main priority 20
+        ip -4 rule add to "${route}" table main priority 20
+    fi
+done
