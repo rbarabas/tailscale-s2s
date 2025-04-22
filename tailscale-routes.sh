@@ -26,7 +26,7 @@ for route in ${ts_local_ipv4_routes}; do
     fi
 
     echo "ip -4 rule add to ${route} table main priority 20"
-    # ip -4 rule add to "${route}" table main priority 20
+    ip -4 rule add to "${route}" table main priority 20
 done
 
 # Exclude IPv6 routes that are directly connected to the host
@@ -38,7 +38,7 @@ for route in ${ts_local_ipv6_routes}; do
     fi
 
     echo "ip -6 rule add to ${route} table main priority 20"
-    # ip -6 rule add to "${route}" table main priority 20
+    ip -6 rule add to "${route}" table main priority 20
 done
 
 # Derive routes from tailscaled.state
